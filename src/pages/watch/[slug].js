@@ -125,7 +125,7 @@ export default function Watch() {
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <p className="text-xs text-orange-700">CollectaMemory • {templateName}</p>
+            <p className="text-xs text-orange-700">CollectAMemory • {templateName}</p>
             <h1 className="text-3xl font-extrabold text-orange-800 mt-2">
               {card.title || fields.name || fields.location || fields.brideGroom || "Memory Card"}
             </h1>
