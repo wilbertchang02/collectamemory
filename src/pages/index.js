@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 
 const MOCKUPS = [
@@ -47,91 +47,96 @@ const MOCKUPS = [
 ]
 
 function FlipMockupCard({ label, front, back }) {
-  // Mobile: tap to flip (since hover doesn't exist)
+  // Mobile: tap toggles flip (one tap flip, one tap flip back)
+  // Desktop: hover flips (tap does nothing)
   const [flipped, setFlipped] = useState(false)
+  const [canHover, setCanHover] = useState(false)
+
+  useEffect(() => {
+    // Detect whether the device supports hover (desktop/laptop)
+    const mq = window.matchMedia?.("(hover: hover)")
+    if (!mq) return
+    const update = () => setCanHover(!!mq.matches)
+    update()
+
+    // Support both modern + older browsers
+    if (mq.addEventListener) mq.addEventListener("change", update)
+    else mq.addListener(update)
+
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", update)
+      else mq.removeListener(update)
+    }
+  }, [])
+
+  const handleTap = () => {
+    // Only enable tap-to-flip on non-hover devices (mobile/tablet)
+    if (canHover) return
+    setFlipped((v) => !v)
+  }
+
+  const hint = canHover ? "Hover to flip" : "Tap to flip"
 
   return (
-    <button
-      type="button"
-      onClick={() => setFlipped((v) => !v)}
-      className="group w-full text-left"
-      aria-label={`Flip ${label} card`}
-      title="Tap to flip"
-    >
+    <div className="group w-full">
       <div
-        className="
-          relative
-          w-full
-          aspect-[1.586/1]
-          [perspective:1200px]
-        "
+        onClick={handleTap}
+        role={!canHover ? "button" : undefined}
+        tabIndex={!canHover ? 0 : undefined}
+        aria-label={!canHover ? `Flip ${label} card` : undefined}
+        className={[
+          "relative w-full aspect-[1.586/1] [perspective:1200px]",
+          canHover ? "" : "cursor-pointer",
+        ].join(" ")}
       >
         <div
           className="
             absolute inset-0
-            transition-transform duration-500
+            transition-transform duration-1000 ease-in-out
             [transform-style:preserve-3d]
+            group-hover:[transform:rotateY(180deg)]
           "
           style={{
-            transform:
-              flipped
-                ? "rotateY(180deg)"
-                : undefined,
+            // On mobile/tablet: state controls the flip
+            // On desktop: hover controls the flip (state stays false)
+            transform: !canHover && flipped ? "rotateY(180deg)" : undefined,
           }}
         >
-          {/* Desktop hover flip */}
+          {/* Front */}
           <div
             className="
               absolute inset-0
-              transition-transform duration-500
-              [transform-style:preserve-3d]
-              group-hover:[transform:rotateY(180deg)]
+              rounded-2xl overflow-hidden
+              border border-orange-200 bg-white
+              [backface-visibility:hidden]
+              shadow-sm
             "
-            // This inner wrapper allows hover flip on desktop,
-            // while the outer state handles mobile tap flip.
-            style={{
-              transform:
-                flipped
-                  ? "rotateY(180deg)"
-                  : undefined,
-            }}
           >
-            {/* Front */}
-            <div
-              className="
-                absolute inset-0
-                rounded-2xl overflow-hidden
-                border border-orange-200 bg-white
-                [backface-visibility:hidden]
-                shadow-sm
-              "
-            >
-              <img
-                src={front}
-                alt={`${label} front`}
-                className="w-full h-full object-contain bg-white"
-                draggable="false"
-              />
-            </div>
+            <img
+              src={front}
+              alt={`${label} front`}
+              className="w-full h-full object-contain bg-white"
+              draggable="false"
+            />
+          </div>
 
-            {/* Back */}
-            <div
-              className="
-                absolute inset-0
-                rounded-2xl overflow-hidden
-                border border-orange-200 bg-white
-                [backface-visibility:hidden]
-                [transform:rotateY(180deg)]
-                shadow-sm
-              "
-            >
-              <img
-                src={back}
-                alt={`${label} back`}
-                className="w-full h-full object-contain bg-white"
-                draggable="false"
-              />
-            </div>
+          {/* Back */}
+          <div
+            className="
+              absolute inset-0
+              rounded-2xl overflow-hidden
+              border border-orange-200 bg-white
+              [backface-visibility:hidden]
+              shadow-sm
+            "
+            style={{ transform: "rotateY(180deg)" }}
+          >
+            <img
+              src={back}
+              alt={`${label} back`}
+              className="w-full h-full object-contain bg-white"
+              draggable="false"
+            />
           </div>
         </div>
       </div>
@@ -139,17 +144,8 @@ function FlipMockupCard({ label, front, back }) {
       <p className="mt-3 text-sm font-semibold text-orange-800 text-center">
         {label}
       </p>
-
-      {/* Desktop hint */}
-      <p className="text-xs text-orange-700 text-center hidden sm:block">
-        Hover to flip
-      </p>
-
-      {/* Mobile hint */}
-      <p className="text-xs text-orange-700 text-center sm:hidden">
-        Tap to flip
-      </p>
-    </button>
+      <p className="text-xs text-orange-700 text-center">{hint}</p>
+    </div>
   )
 }
 
@@ -254,7 +250,7 @@ export default function Home() {
             </div>
 
             <p className="text-xs text-orange-700 mt-3">
-              Tip: on mobile, tap a template to flip it.
+              Tip: on desktop hover to flip — on mobile tap to flip.
             </p>
           </div>
         </section>
@@ -267,10 +263,7 @@ export default function Home() {
                 Choose a template
               </h2>
               <p className="text-orange-700 mt-1">
-                7 styles for your biggest milestones.{" "}
-                <span className="hidden sm:inline">Hover</span>
-                <span className="sm:hidden">Tap</span>{" "}
-                to flip and see the back.
+                7 styles for your biggest milestones. Hover (desktop) or tap (mobile) to flip.
               </p>
             </div>
 
@@ -342,4 +335,3 @@ export default function Home() {
     </div>
   )
 }
-
