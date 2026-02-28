@@ -1,3 +1,4 @@
+import { useState } from "react"
 import Link from "next/link"
 
 const MOCKUPS = [
@@ -46,8 +47,17 @@ const MOCKUPS = [
 ]
 
 function FlipMockupCard({ label, front, back }) {
+  // Mobile: tap to flip (since hover doesn't exist)
+  const [flipped, setFlipped] = useState(false)
+
   return (
-    <div className="group">
+    <button
+      type="button"
+      onClick={() => setFlipped((v) => !v)}
+      className="group w-full text-left"
+      aria-label={`Flip ${label} card`}
+      title="Tap to flip"
+    >
       <div
         className="
           relative
@@ -61,44 +71,67 @@ function FlipMockupCard({ label, front, back }) {
             absolute inset-0
             transition-transform duration-500
             [transform-style:preserve-3d]
-            group-hover:[transform:rotateY(180deg)]
           "
+          style={{
+            transform:
+              flipped
+                ? "rotateY(180deg)"
+                : undefined,
+          }}
         >
-          {/* Front */}
+          {/* Desktop hover flip */}
           <div
             className="
               absolute inset-0
-              rounded-2xl overflow-hidden
-              border border-orange-200 bg-white
-              [backface-visibility:hidden]
-              shadow-sm
+              transition-transform duration-500
+              [transform-style:preserve-3d]
+              group-hover:[transform:rotateY(180deg)]
             "
+            // This inner wrapper allows hover flip on desktop,
+            // while the outer state handles mobile tap flip.
+            style={{
+              transform:
+                flipped
+                  ? "rotateY(180deg)"
+                  : undefined,
+            }}
           >
-            <img
-              src={front}
-              alt={`${label} front`}
-              className="w-full h-full object-contain bg-white"
-              draggable="false"
-            />
-          </div>
+            {/* Front */}
+            <div
+              className="
+                absolute inset-0
+                rounded-2xl overflow-hidden
+                border border-orange-200 bg-white
+                [backface-visibility:hidden]
+                shadow-sm
+              "
+            >
+              <img
+                src={front}
+                alt={`${label} front`}
+                className="w-full h-full object-contain bg-white"
+                draggable="false"
+              />
+            </div>
 
-          {/* Back */}
-          <div
-            className="
-              absolute inset-0
-              rounded-2xl overflow-hidden
-              border border-orange-200 bg-white
-              [backface-visibility:hidden]
-              [transform:rotateY(180deg)]
-              shadow-sm
-            "
-          >
-            <img
-              src={back}
-              alt={`${label} back`}
-              className="w-full h-full object-contain bg-white"
-              draggable="false"
-            />
+            {/* Back */}
+            <div
+              className="
+                absolute inset-0
+                rounded-2xl overflow-hidden
+                border border-orange-200 bg-white
+                [backface-visibility:hidden]
+                [transform:rotateY(180deg)]
+                shadow-sm
+              "
+            >
+              <img
+                src={back}
+                alt={`${label} back`}
+                className="w-full h-full object-contain bg-white"
+                draggable="false"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -106,10 +139,17 @@ function FlipMockupCard({ label, front, back }) {
       <p className="mt-3 text-sm font-semibold text-orange-800 text-center">
         {label}
       </p>
-      <p className="text-xs text-orange-700 text-center">
+
+      {/* Desktop hint */}
+      <p className="text-xs text-orange-700 text-center hidden sm:block">
         Hover to flip
       </p>
-    </div>
+
+      {/* Mobile hint */}
+      <p className="text-xs text-orange-700 text-center sm:hidden">
+        Tap to flip
+      </p>
+    </button>
   )
 }
 
@@ -214,12 +254,12 @@ export default function Home() {
             </div>
 
             <p className="text-xs text-orange-700 mt-3">
-              Tip: hover a template below to flip the card.
+              Tip: on mobile, tap a template to flip it.
             </p>
           </div>
         </section>
 
-        {/* NEW: Template mockups section */}
+        {/* Template mockups section */}
         <section className="py-10 border-t border-orange-200">
           <div className="flex items-end justify-between gap-4 flex-wrap">
             <div>
@@ -227,7 +267,10 @@ export default function Home() {
                 Choose a template
               </h2>
               <p className="text-orange-700 mt-1">
-                7 styles for your biggest milestones. Hover to flip and see the back.
+                7 styles for your biggest milestones.{" "}
+                <span className="hidden sm:inline">Hover</span>
+                <span className="sm:hidden">Tap</span>{" "}
+                to flip and see the back.
               </p>
             </div>
 
@@ -299,3 +342,4 @@ export default function Home() {
     </div>
   )
 }
+
