@@ -46,31 +46,39 @@ const MOCKUPS = [
   },
 ]
 
-function FlipMockupCard({ label, front, back }) {
-  // Mobile: tap toggles flip (one tap flip, one tap flip back)
-  // Desktop: hover flips (tap does nothing)
-  const [flipped, setFlipped] = useState(false)
+function useCanHover() {
   const [canHover, setCanHover] = useState(false)
 
   useEffect(() => {
-    // Detect whether the device supports hover (desktop/laptop)
     const mq = window.matchMedia?.("(hover: hover)")
     if (!mq) return
     const update = () => setCanHover(!!mq.matches)
     update()
-
-    // Support both modern + older browsers
     if (mq.addEventListener) mq.addEventListener("change", update)
     else mq.addListener(update)
-
     return () => {
       if (mq.removeEventListener) mq.removeEventListener("change", update)
       else mq.removeListener(update)
     }
   }, [])
 
+  return canHover
+}
+
+function FlipCard({
+  label,
+  front,
+  back,
+  hintClassName = "",
+  containerClassName = "",
+  cardClassName = "",
+}) {
+  // Mobile: tap toggles flip (one tap flip, one tap flip back)
+  // Desktop: hover flips (tap does nothing)
+  const [flipped, setFlipped] = useState(false)
+  const canHover = useCanHover()
+
   const handleTap = () => {
-    // Only enable tap-to-flip on non-hover devices (mobile/tablet)
     if (canHover) return
     setFlipped((v) => !v)
   }
@@ -78,7 +86,7 @@ function FlipMockupCard({ label, front, back }) {
   const hint = canHover ? "Hover to flip" : "Tap to flip"
 
   return (
-    <div className="group w-full">
+    <div className={`group w-full ${containerClassName}`}>
       <div
         onClick={handleTap}
         role={!canHover ? "button" : undefined}
@@ -87,6 +95,7 @@ function FlipMockupCard({ label, front, back }) {
         className={[
           "relative w-full aspect-[1.586/1] [perspective:1200px]",
           canHover ? "" : "cursor-pointer",
+          cardClassName,
         ].join(" ")}
       >
         <div
@@ -97,8 +106,6 @@ function FlipMockupCard({ label, front, back }) {
             group-hover:[transform:rotateY(180deg)]
           "
           style={{
-            // On mobile/tablet: state controls the flip
-            // On desktop: hover controls the flip (state stays false)
             transform: !canHover && flipped ? "rotateY(180deg)" : undefined,
           }}
         >
@@ -141,15 +148,16 @@ function FlipMockupCard({ label, front, back }) {
         </div>
       </div>
 
-      <p className="mt-3 text-sm font-semibold text-orange-800 text-center">
-        {label}
+      <p className={`text-xs text-orange-700 text-center mt-2 ${hintClassName}`}>
+        {hint}
       </p>
-      <p className="text-xs text-orange-700 text-center">{hint}</p>
     </div>
   )
 }
 
 export default function Home() {
+  const sportsLeagueMock = MOCKUPS.find((m) => m.id === "sportsleagues")
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
       {/* Header */}
@@ -157,8 +165,8 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="CollectaMemory" className="h-10 w-auto" />
           <div>
-            <p className="text-lg font-extrabold text-orange-800">CollectaMemory</p>
-            <p className="text-xs text-orange-700">Collect the memories that matter.</p>
+            <p className="text-lg font-extrabold text-orange-800">CollectAMemory</p>
+            <p className="text-xs text-orange-700">Collect the Memories that Matter Most.</p>
           </div>
         </div>
 
@@ -227,7 +235,7 @@ export default function Home() {
             <div className="mt-4 border border-orange-200 rounded-2xl overflow-hidden">
               <div className="h-2 bg-orange-600" />
               <div className="p-5">
-                <p className="text-xs text-orange-700">CollectaMemory Card</p>
+                <p className="text-xs text-orange-700">CollectAMemory Card</p>
                 <p className="text-2xl font-extrabold mt-2 text-orange-800">
                   One tap. Instant replay.
                 </p>
@@ -235,12 +243,15 @@ export default function Home() {
                   Includes a cover photo, up to 5 gallery photos, and one highlight video.
                 </p>
 
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="h-16 bg-orange-50 rounded-lg flex items-center justify-center text-xs text-orange-700">
-                    Cover
-                  </div>
-                  <div className="h-16 bg-orange-50 rounded-lg" />
-                  <div className="h-16 bg-orange-50 rounded-lg" />
+                {/* Replaced sketch with Sports Leagues flip card */}
+                <div className="mt-4">
+                  <FlipCard
+                    label={sportsLeagueMock?.label || "Sports Leagues"}
+                    front={sportsLeagueMock?.front || "/templates/sportsleagues-front.png"}
+                    back={sportsLeagueMock?.back || "/templates/sportsleagues-back.png"}
+                    hintClassName="mt-3"
+                    cardClassName="max-w-sm mx-auto"
+                  />
                 </div>
 
                 <div className="mt-4 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-xs text-orange-700">
@@ -250,7 +261,7 @@ export default function Home() {
             </div>
 
             <p className="text-xs text-orange-700 mt-3">
-              Tip: on desktop hover to flip — on mobile tap to flip.
+              Tip: hover (desktop) or tap (mobile) to flip the example card.
             </p>
           </div>
         </section>
@@ -259,9 +270,7 @@ export default function Home() {
         <section className="py-10 border-t border-orange-200">
           <div className="flex items-end justify-between gap-4 flex-wrap">
             <div>
-              <h2 className="text-2xl font-extrabold text-orange-800">
-                Choose a template
-              </h2>
+              <h2 className="text-2xl font-extrabold text-orange-800">Choose a template</h2>
               <p className="text-orange-700 mt-1">
                 7 styles for your biggest milestones. Hover (desktop) or tap (mobile) to flip.
               </p>
@@ -277,53 +286,42 @@ export default function Home() {
 
           <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {MOCKUPS.map((m) => (
-              <FlipMockupCard
-                key={m.id}
-                label={m.label}
-                front={m.front}
-                back={m.back}
-              />
+              <div key={m.id}>
+                <FlipCard label={m.label} front={m.front} back={m.back} hintClassName="hidden" />
+                <p className="mt-3 text-sm font-semibold text-orange-800 text-center">{m.label}</p>
+                <p className="text-xs text-orange-700 text-center">Hover (desktop) / Tap (mobile)</p>
+              </div>
             ))}
           </div>
         </section>
 
         {/* How it works */}
         <section className="py-10 border-t border-orange-200">
-          <h2 className="text-2xl font-extrabold mb-4 text-orange-800">
-            How it works
-          </h2>
+          <h2 className="text-2xl font-extrabold mb-4 text-orange-800">How it works</h2>
 
           <div className="grid md:grid-cols-4 gap-4">
             <div className="bg-white border border-orange-200 rounded-2xl p-5">
               <p className="text-2xl">🎨</p>
               <p className="font-semibold mt-2 text-orange-800">Pick a template</p>
-              <p className="text-sm text-orange-700 mt-1">
-                Choose a style that fits your moment.
-              </p>
+              <p className="text-sm text-orange-700 mt-1">Choose a style that fits your moment.</p>
             </div>
 
             <div className="bg-white border border-orange-200 rounded-2xl p-5">
               <p className="text-2xl">✍️</p>
               <p className="font-semibold mt-2 text-orange-800">Add your details</p>
-              <p className="text-sm text-orange-700 mt-1">
-                Name, date, and a short description.
-              </p>
+              <p className="text-sm text-orange-700 mt-1">Name, date, and a short description.</p>
             </div>
 
             <div className="bg-white border border-orange-200 rounded-2xl p-5">
               <p className="text-2xl">📸</p>
               <p className="font-semibold mt-2 text-orange-800">Upload media</p>
-              <p className="text-sm text-orange-700 mt-1">
-                1 cover photo + up to 5 photos + 1 video.
-              </p>
+              <p className="text-sm text-orange-700 mt-1">1 cover photo + up to 5 photos + 1 video.</p>
             </div>
 
             <div className="bg-white border border-orange-200 rounded-2xl p-5">
               <p className="text-2xl">📲</p>
               <p className="font-semibold mt-2 text-orange-800">Tap to relive</p>
-              <p className="text-sm text-orange-700 mt-1">
-                Wallet-sized PVC card with NFC playback.
-              </p>
+              <p className="text-sm text-orange-700 mt-1">Wallet-sized PVC card with NFC playback.</p>
             </div>
           </div>
         </section>
@@ -335,3 +333,4 @@ export default function Home() {
     </div>
   )
 }
+
